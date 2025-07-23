@@ -32,17 +32,17 @@ type VaccinationRecord = {
 };
 
 const initialReminders: Reminder[] = [
-    { id: 1, type: 'Vaccination', date: '2024-08-01', notes: 'FMD Booster Shot' },
-    { id: 2, type: 'Deworming', date: '2024-09-15', notes: 'Oral medication' },
-    { id: 3, type: 'Pregnancy Due', date: '2024-10-20', notes: 'Expected delivery for Cow #3' },
-    { id: 4, type: 'Heat Cycle', date: '2024-08-12', notes: 'Predicted for Heifer #1' },
+    { id: 1, type: 'Vaccination', date: '2025-08-01', notes: 'FMD Booster Shot' },
+    { id: 2, type: 'Deworming', date: '2025-09-15', notes: 'Oral medication' },
+    { id: 3, type: 'Pregnancy Due', date: '2025-10-20', notes: 'Expected delivery for Cow #3' },
+    { id: 4, type: 'Heat Cycle', date: '2025-08-12', notes: 'Predicted for Heifer #1' },
 ];
 
 const initialVaccinations: VaccinationRecord[] = [
-    { id: 1, name: 'Anthrax Vaccine', date: new Date('2024-07-15'), status: 'done'},
-    { id: 2, name: 'FMD Booster', date: new Date('2024-08-01'), status: 'due' },
-    { id: 3, name: 'Rabies Shot', date: new Date('2024-06-20'), status: 'done' },
-    { id: 4, name: 'Tetanus Toxoid', date: new Date('2024-09-10'), status: 'due' },
+    { id: 1, name: 'Anthrax Vaccine', date: new Date('2025-07-15'), status: 'done'},
+    { id: 2, name: 'FMD Booster', date: new Date('2025-08-01'), status: 'due' },
+    { id: 3, name: 'Rabies Shot', date: new Date('2025-06-20'), status: 'done' },
+    { id: 4, name: 'Tetanus Toxoid', date: new Date('2025-09-10'), status: 'due' },
 ];
 
 const reminderIcons = {
@@ -219,3 +219,5 @@ export default function RemindersPage() {
         </div>
     )
 }
+
+    
