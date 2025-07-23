@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { useFormState } from 'react-dom';
+import React, { useActionState } from 'react';
 import Header from '@/components/header';
 import DiagnosisForm from '@/components/diagnosis-form';
 import { DiagnosisResult } from '@/components/diagnosis-result';
@@ -17,7 +16,7 @@ const initialState: DiagnosisResultState = {
 };
 
 export default function Home() {
-  const [state, formAction] = useFormState(getDiagnosisAction, initialState);
+  const [state, formAction] = useActionState(getDiagnosisAction, initialState);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
