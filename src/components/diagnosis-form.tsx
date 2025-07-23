@@ -40,9 +40,10 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [symptoms, setSymptoms] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioRecorded, setAudioRecorded] = useState(false);
   const [language, setLanguage] = useState('English');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const formRef = React.useRef<HTMLFormElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
@@ -66,14 +67,23 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
       };
 
       mediaRecorder.onstop = () => {
-        const newAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(newAudioBlob);
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        
+        if (formRef.current) {
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(new File([audioBlob], "symptoms.webm", { type: "audio/webm" }));
+            const audioInput = formRef.current.querySelector('input[name="symptomsAudio"]') as HTMLInputElement;
+            if (audioInput) {
+                audioInput.files = dataTransfer.files;
+            }
+        }
+        setAudioRecorded(true);
         stream.getTracks().forEach(track => track.stop());
       };
 
       mediaRecorder.start();
       setIsRecording(true);
-      setAudioBlob(null);
+      setAudioRecorded(false);
     } catch (err) {
       console.error('Microphone access denied:', err);
       toast({
@@ -98,13 +108,6 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
       startRecording();
     }
   }
-  
-  const handleFormAction = (formData: FormData) => {
-      if (audioBlob) {
-          formData.append('symptomsAudio', audioBlob, 'symptoms.webm');
-      }
-      formAction(formData);
-  }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -125,8 +128,10 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
   }, [previewUrl]);
 
   return (
-    <form action={handleFormAction}>
+    <form action={formAction} ref={formRef}>
       <input type="hidden" name="language" value={language} />
+      {/* Hidden input to hold the audio file */}
+      <input type="file" name="symptomsAudio" className="hidden" />
       <Card>
         <CardContent className="p-6 space-y-6">
           <div className="space-y-2">
@@ -184,7 +189,7 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
                     >
                         {isRecording ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
                     </Button>
-                    {audioBlob && !isRecording && (
+                    {audioRecorded && !isRecording && (
                        <Badge variant="secondary" className="gap-1 text-green-600">
                            <CircleCheck className="h-3 w-3" />
                            Saved
