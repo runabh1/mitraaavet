@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,10 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Mic, Loader2 } from 'lucide-react';
+import { Upload, Mic, Loader2, Square } from 'lucide-react';
 import type { DiagnosisResultState } from '@/lib/types';
 import { Alert, AlertDescription } from './ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 interface DiagnosisFormProps {
   formAction: (payload: FormData) => void;
@@ -35,7 +37,62 @@ function SubmitButton() {
 
 export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [symptoms, setSymptoms] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // SpeechRecognition is only available in the browser
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        setSymptoms(prev => prev + finalTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        toast({
+          variant: 'destructive',
+          title: 'Speech Recognition Error',
+          description: `An error occurred: ${event.error}. Please try again.`,
+        });
+        setIsRecording(false);
+      };
+      
+      recognition.onend = () => {
+        if (isRecording) {
+            // If it stops unexpectedly, restart it.
+            recognition.start();
+        }
+      };
+
+      recognitionRef.current = recognition;
+    } else {
+      console.warn('SpeechRecognition API not supported in this browser.');
+    }
+    
+    return () => {
+      recognitionRef.current?.stop();
+    }
+  }, [isRecording, toast]);
+
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -44,6 +101,35 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
       setPreviewUrl(url);
     } else {
       setPreviewUrl(null);
+    }
+  };
+  
+  const toggleRecording = () => {
+    if (!recognitionRef.current) {
+       toast({
+          variant: 'destructive',
+          title: 'Voice Input Not Supported',
+          description: 'Your browser does not support speech recognition.',
+        });
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      // Request microphone permission and start
+       navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+           recognitionRef.current?.start();
+           setIsRecording(true);
+       }).catch(err => {
+            console.error('Microphone access denied:', err);
+            toast({
+              variant: 'destructive',
+              title: 'Microphone Access Denied',
+              description: 'Please enable microphone permissions in your browser settings.',
+            });
+       })
     }
   };
   
@@ -101,6 +187,8 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
                 placeholder="e.g., My cow is coughing, not eating, and has a fever..."
                 rows={4}
                 className="pr-10"
+                value={symptoms}
+                onChange={(e) => setSymptoms(e.target.value)}
               />
               <Button
                 type="button"
@@ -108,8 +196,9 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
                 size="icon"
                 className="absolute top-1/2 right-2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
                 aria-label="Use voice input"
+                onClick={toggleRecording}
               >
-                <Mic className="h-5 w-5" />
+                {isRecording ? <Square className="h-5 w-5 text-destructive" /> : <Mic className="h-5 w-5" />}
               </Button>
             </div>
           </div>
