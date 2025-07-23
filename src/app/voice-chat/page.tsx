@@ -57,6 +57,8 @@ export default function VoiceChatPage() {
     const audioChunksRef = useRef<Blob[]>([]);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const formRef = useRef<HTMLFormElement>(null);
+
 
     const [state, formAction, isPending] = useActionState(handleVoiceQueryAction, { messages: [] });
 
@@ -111,10 +113,15 @@ export default function VoiceChatPage() {
 
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                const formData = new FormData();
-                formData.append('audioBlob', audioBlob);
-                formData.append('language', language);
-                formAction(formData);
+                
+                if (formRef.current) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(new File([audioBlob], "symptoms.webm", { type: "audio/webm" }));
+                    const fileInput = formRef.current.querySelector('input[type="file"]') as HTMLInputElement;
+                    fileInput.files = dataTransfer.files;
+                    formRef.current.requestSubmit();
+                }
+
                  // Stop all tracks to release the microphone
                 stream.getTracks().forEach(track => track.stop());
             };
@@ -196,6 +203,12 @@ export default function VoiceChatPage() {
                                </div>
                             )}
                         </ScrollArea>
+
+                        <form action={formAction} ref={formRef} className="hidden">
+                            <input type="file" name="audioBlob" />
+                            <input type="hidden" name="language" value={language} />
+                        </form>
+
                         <div className="flex justify-center items-center pt-4">
                             <Button
                                 type="button"
