@@ -61,10 +61,14 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
 
       recognition.onresult = (event) => {
         let finalTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
             finalTranscript += event.results[i][0].transcript;
+          }
         }
-        setSymptoms(finalTranscript);
+        if (finalTranscript) {
+          setSymptoms(prev => prev + finalTranscript + ' ');
+        }
       };
 
       recognition.onerror = (event) => {
