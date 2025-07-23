@@ -81,16 +81,18 @@ export async function getDiagnosisAction(
     let combinedSymptoms = symptoms || '';
 
     if (symptomsAudio && symptomsAudio.size > 0) {
-        // If there's audio, transcribe it and append to text symptoms.
         const audioDataUri = await fileToDataUri(symptomsAudio);
+        
+        // Directly call the STT prompt from genkit
         const sttResponse = await ai.generate({
-            prompt: `Transcribe the following audio. The speaker is talking in ${language || 'English'}.
-Audio: {{media url=audioDataUri}}`,
+            prompt: `Transcribe the following audio. The speaker is talking in ${language || 'English'}. Audio: {{media url=audioDataUri}}`,
             context: { audioDataUri },
         });
+
         const transcribedText = sttResponse.text;
+
         if (transcribedText) {
-            combinedSymptoms = `${symptoms ? symptoms + ' ' : ''}${transcribedText}`;
+            combinedSymptoms = `${symptoms ? symptoms + ' ' : ''}${transcribedText}`.trim();
         }
     }
 
