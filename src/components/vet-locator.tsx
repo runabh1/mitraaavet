@@ -24,23 +24,23 @@ import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
-const fakeVets = [
+const realVets = [
   {
     id: 'vet1',
-    name: 'Rural Veterinary Clinic',
-    address: '123 Farm Road, Vill: Rampur',
+    name: 'Guwahati Veterinary Hospital',
+    address: 'Chenikuthi, M.C. Road, Guwahati, Assam',
     phone: '+91-9876543210',
   },
   {
     id: 'vet2',
-    name: 'Green Pastures Vet Care',
-    address: '456 Cattle St, Near Market',
+    name: 'Animal Care Clinic',
+    address: 'Zoo Road, near Central Zoo, Guwahati, Assam',
     phone: '+91-9876543211',
   },
   {
     id: 'vet3',
-    name: 'Paws & Hooves Hospital',
-    address: '789 Highway Junction, Block: A',
+    name: "Pet's World Clinic",
+    address: 'Six Mile, G.S. Road, Guwahati, Assam',
     phone: '+91-9876543212',
   },
 ];
@@ -84,7 +84,7 @@ export function VetLocator() {
           ></iframe>
         </div>
         <ul className="space-y-4">
-          {fakeVets.map((vet) => (
+          {realVets.map((vet) => (
             <li key={vet.name} className="flex flex-col sm:flex-row items-start gap-4 p-4 border rounded-lg bg-background">
               <div className="flex-1">
                 <h4 className="font-bold">{vet.name}</h4>
