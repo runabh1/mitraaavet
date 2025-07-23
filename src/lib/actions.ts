@@ -83,14 +83,16 @@ export async function getDiagnosisAction(
     if (symptomsAudio && symptomsAudio.size > 0) {
         const audioDataUri = await fileToDataUri(symptomsAudio);
         
-        // Directly call the STT prompt from genkit
-        const sttResponse = await ai.generate({
-            prompt: `Transcribe the following audio. The speaker is talking in ${language || 'English'}. Audio: {{media url=audioDataUri}}`,
-            context: { audioDataUri },
+        const sttPrompt = ai.definePrompt({
+          name: 'sttSymptomPrompt',
+          input: { schema: z.object({ audioDataUri: z.string(), language: z.string() }) },
+          prompt: `Transcribe the following audio. The speaker is describing animal symptoms in {{language}}.
+Audio: {{media url=audioDataUri}}`
         });
 
+        const sttResponse = await sttPrompt({ audioDataUri, language: language || 'English' });
         const transcribedText = sttResponse.text;
-
+        
         if (transcribedText) {
             combinedSymptoms = `${symptoms ? symptoms + ' ' : ''}${transcribedText}`.trim();
         }
