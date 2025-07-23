@@ -4,9 +4,10 @@ import { z } from 'zod';
 import { analyzeAnimalImage } from '@/ai/flows/analyze-animal-image';
 import { processSymptoms } from '@/ai/flows/process-symptoms';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
-import type { DiagnosisResultState } from './types';
+import { getFeedAdvice } from '@/ai/flows/get-feed-advice';
+import type { DiagnosisResultState, FeedAdviceState } from './types';
 
-const formSchema = z.object({
+const diagnosisFormSchema = z.object({
   symptoms: z.string().optional(),
   animalPhoto: z
     .instanceof(File, { message: 'Image is required.' })
@@ -16,6 +17,12 @@ const formSchema = z.object({
       'Only image files are allowed.'
     )
     .refine((file) => file.size < 4 * 1024 * 1024, 'Image must be less than 4MB.'),
+});
+
+const feedAdviceFormSchema = z.object({
+    species: z.string().min(1, 'Species is required.'),
+    age: z.string().min(1, 'Age is required.'),
+    location: z.string().min(1, 'Location is required.'),
 });
 
 async function fileToDataUri(file: File): Promise<string> {
@@ -44,7 +51,7 @@ export async function getDiagnosisAction(
   prevState: DiagnosisResultState,
   formData: FormData
 ): Promise<DiagnosisResultState> {
-  const validatedFields = formSchema.safeParse({
+  const validatedFields = diagnosisFormSchema.safeParse({
     symptoms: formData.get('symptoms'),
     animalPhoto: formData.get('animalPhoto'),
   });
@@ -87,4 +94,39 @@ export async function getDiagnosisAction(
       pending: false,
     };
   }
+}
+
+export async function getFeedAdviceAction(
+  prevState: FeedAdviceState,
+  formData: FormData
+): Promise<FeedAdviceState> {
+    const validatedFields = feedAdviceFormSchema.safeParse({
+        species: formData.get('species'),
+        age: formData.get('age'),
+        location: formData.get('location'),
+    });
+
+    if (!validatedFields.success) {
+        const fieldErrors = validatedFields.error.flatten().fieldErrors;
+        const errorMessage = Object.values(fieldErrors).flat()[0] || 'Invalid input.';
+        return {
+            data: null,
+            error: errorMessage,
+            pending: false,
+        };
+    }
+    
+    const { species, age, location } = validatedFields.data;
+
+    try {
+        const result = await getFeedAdvice({ species, age, location });
+        return { data: result, error: null, pending: false };
+    } catch (e: any) {
+        console.error(e);
+        return {
+            data: null,
+            error: e.message || 'An unexpected error occurred. Please try again.',
+            pending: false,
+        };
+    }
 }
