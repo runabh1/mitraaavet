@@ -30,25 +30,31 @@ const realVets = [
     name: 'Guwahati Veterinary Hospital',
     address: 'Chenikuthi, M.C. Road, Guwahati, Assam',
     phone: '+91-9876543210',
+    query: 'Guwahati%20Veterinary%20Hospital%2C%20Guwahati'
   },
   {
     id: 'vet2',
     name: 'Animal Care Clinic',
     address: 'Zoo Road, near Central Zoo, Guwahati, Assam',
     phone: '+91-9876543211',
+    query: 'Animal%20Care%20Clinic%2C%20Zoo%20Road%2C%20Guwahati'
   },
   {
     id: 'vet3',
     name: "Pet's World Clinic",
     address: 'Six Mile, G.S. Road, Guwahati, Assam',
     phone: '+91-9876543212',
+    query: 'Pets%20World%20Clinic%2C%20Six%20Mile%2C%20Guwahati'
   },
 ];
+
+const DEFAULT_MAP_SRC = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d114833.0123681431!2d91.68593459143936!3d26.14333603415663!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375a5a217bac8f21%3A0x8e8bba3356e87a6!2sGuwahati%2C%20Assam%2C%20India!5e0!3m2!1sen!2sus!4v1694773839281!5m2!1sen!2sus&q=veterinary+clinic";
 
 export function VetLocator() {
   const { toast } = useToast();
   const [selectedVet, setSelectedVet] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [mapSrc, setMapSrc] = useState(DEFAULT_MAP_SRC);
 
   const handleBooking = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -59,6 +65,19 @@ export function VetLocator() {
         description: `Your appointment with ${selectedVet?.name} on ${date} is confirmed.`
     });
     setIsDialogOpen(false);
+  }
+
+  const handleShowDirections = (vetQuery: string) => {
+    const origin = "Guwahati, Assam";
+    const destination = vetQuery;
+    const newSrc = `https://www.google.com/maps/embed/v1/directions?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
+    // Since we can't use a real API key in this environment, we'll construct a standard Google Maps URL and open it in a new tab.
+    // For a real embedded experience, you would use an API key with the line above.
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
+    window.open(mapsUrl, '_blank');
+
+    // To demonstrate the map changing, we'll just focus on the destination.
+    setMapSrc(`https://maps.google.com/maps?q=${vetQuery}&t=&z=13&ie=UTF8&iwloc=&output=embed`);
   }
 
 
@@ -73,7 +92,7 @@ export function VetLocator() {
       <CardContent className="space-y-4">
         <div className="h-64 w-full rounded-lg overflow-hidden relative border">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d114833.0123681431!2d91.68593459143936!3d26.14333603415663!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375a5a217bac8f21%3A0x8e8bba3356e87a6!2sGuwahati%2C%20Assam%2C%20India!5e0!3m2!1sen!2sus!4v1694773839281!5m2!1sen!2sus&q=veterinary+clinic"
+            src={mapSrc}
             width="100%"
             height="100%"
             style={{ border: 0 }}
@@ -98,7 +117,7 @@ export function VetLocator() {
                 </p>
               </div>
               <div className="flex gap-2 self-start sm:self-center">
-                 <Button variant="outline" size="sm">
+                 <Button variant="outline" size="sm" onClick={() => handleShowDirections(vet.query)}>
                     Directions
                  </Button>
                  <Button size="sm" onClick={() => {
@@ -135,7 +154,7 @@ export function VetLocator() {
                   </DialogFooter>
               </form>
           </DialogContent>
-      </Dialog>
+    </Dialog>
     </Card>
   );
 }
