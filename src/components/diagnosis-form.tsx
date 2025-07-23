@@ -9,10 +9,11 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Mic, Loader2, Square } from 'lucide-react';
+import { Upload, Mic, Loader2, Square, CircleCheck } from 'lucide-react';
 import type { DiagnosisResultState } from '@/lib/types';
 import { Alert, AlertDescription } from './ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from './ui/badge';
 
 interface DiagnosisFormProps {
   formAction: (payload: FormData) => void;
@@ -39,9 +40,11 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [symptoms, setSymptoms] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [language, setLanguage] = useState('English');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,52 +52,59 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
     setLanguage(savedLanguage);
   }, []);
 
-  useEffect(() => {
-    const languageCode = language === 'Assamese' ? 'as-IN' : language === 'Hindi' ? 'hi-IN' : 'en-US';
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = languageCode;
-
-      recognition.onresult = (event) => {
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          }
-        }
-        if (finalTranscript) {
-          setSymptoms(prev => prev + finalTranscript + ' ');
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
       };
 
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        toast({
-          variant: 'destructive',
-          title: 'Speech Recognition Error',
-          description: `An error occurred: ${event.error}. Please try again.`,
-        });
-        setIsRecording(false);
-      };
-      
-      recognition.onend = () => {
-        setIsRecording(false);
+      mediaRecorder.onstop = () => {
+        const newAudioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setAudioBlob(newAudioBlob);
+        stream.getTracks().forEach(track => track.stop());
       };
 
-      recognitionRef.current = recognition;
+      mediaRecorder.start();
+      setIsRecording(true);
+      setAudioBlob(null);
+    } catch (err) {
+      console.error('Microphone access denied:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Permission Denied',
+        description: 'Please allow microphone access.',
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+  
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
     } else {
-      console.warn('SpeechRecognition API not supported in this browser.');
+      startRecording();
     }
-    
-    return () => {
-      recognitionRef.current?.stop();
-    }
-  }, [toast, language]);
-
+  }
+  
+  const handleFormAction = (formData: FormData) => {
+      if (audioBlob) {
+          formData.append('symptomsAudio', audioBlob, 'symptoms.webm');
+      }
+      formAction(formData);
+  }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -103,35 +113,6 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
       setPreviewUrl(url);
     } else {
       setPreviewUrl(null);
-    }
-  };
-  
-  const toggleRecording = () => {
-    if (!recognitionRef.current) {
-       toast({
-          variant: 'destructive',
-          title: 'Voice Input Not Supported',
-          description: 'Your browser does not support speech recognition.',
-        });
-      return;
-    }
-
-    if (isRecording) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    } else {
-       navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
-           setSymptoms('');
-           recognitionRef.current?.start();
-           setIsRecording(true);
-       }).catch(err => {
-            console.error('Microphone access denied:', err);
-            toast({
-              variant: 'destructive',
-              title: 'Microphone Access Denied',
-              description: 'Please enable microphone permissions in your browser settings.',
-            });
-       })
     }
   };
   
@@ -144,7 +125,7 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
   }, [previewUrl]);
 
   return (
-    <form action={formAction}>
+    <form action={handleFormAction}>
       <input type="hidden" name="language" value={language} />
       <Card>
         <CardContent className="p-6 space-y-6">
@@ -182,26 +163,34 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
           </div>
           <div className="space-y-2">
             <Label htmlFor="symptoms" className="text-base">2. Describe Symptoms (Optional)</Label>
-            <div className="relative">
-              <Textarea
+            <div className="flex gap-2 items-start">
+               <Textarea
                 id="symptoms"
                 name="symptoms"
-                placeholder="e.g., My cow is coughing, not eating, and has a fever..."
+                placeholder="Type symptoms here, or use the microphone to record your voice."
                 rows={4}
-                className="pr-10"
+                className="flex-1"
                 value={symptoms}
                 onChange={(e) => setSymptoms(e.target.value)}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute top-1/2 right-2 -translate-y-1/2 h-8 w-8 text-muted-foreground"
-                aria-label="Use voice input"
-                onClick={toggleRecording}
-              >
-                {isRecording ? <Square className="h-5 w-5 text-destructive" /> : <Mic className="h-5 w-5" />}
-              </Button>
+               <div className="flex flex-col gap-2 items-center">
+                    <Button
+                        type="button"
+                        variant={isRecording ? "destructive" : "outline"}
+                        size="icon"
+                        className="h-10 w-10 shrink-0"
+                        aria-label="Use voice input"
+                        onClick={toggleRecording}
+                    >
+                        {isRecording ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                    </Button>
+                    {audioBlob && !isRecording && (
+                       <Badge variant="secondary" className="gap-1 text-green-600">
+                           <CircleCheck className="h-3 w-3" />
+                           Saved
+                       </Badge>
+                    )}
+               </div>
             </div>
           </div>
            {state?.error && (

@@ -1,6 +1,8 @@
+
 'use server';
 
 import { z } from 'zod';
+import { ai } from '@/ai/genkit';
 import { analyzeAnimalImage } from '@/ai/flows/analyze-animal-image';
 import { processSymptoms } from '@/ai/flows/process-symptoms';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
@@ -18,6 +20,7 @@ const diagnosisFormSchema = z.object({
       'Only image files are allowed.'
     )
     .refine((file) => file.size < 4 * 1024 * 1024, 'Image must be less than 4MB.'),
+  symptomsAudio: z.instanceof(File).optional(),
 });
 
 const feedAdviceFormSchema = z.object({
@@ -57,6 +60,7 @@ export async function getDiagnosisAction(
     symptoms: formData.get('symptoms'),
     language: formData.get('language'),
     animalPhoto: formData.get('animalPhoto'),
+    symptomsAudio: formData.get('symptomsAudio'),
   });
 
   if (!validatedFields.success) {
@@ -67,16 +71,32 @@ export async function getDiagnosisAction(
     };
   }
 
-  const { animalPhoto, symptoms, language } = validatedFields.data;
+  const { animalPhoto, symptoms, language, symptomsAudio } = validatedFields.data;
 
   try {
     const animalPhotoDataUri = await fileToDataUri(animalPhoto);
 
     let result;
     let type: 'symptoms' | 'image';
+    let combinedSymptoms = symptoms || '';
 
-    if (symptoms && symptoms.trim().length > 0) {
-      result = await processSymptoms({ animalPhotoDataUri, symptoms, language: language || 'English' });
+    if (symptomsAudio && symptomsAudio.size > 0) {
+        // If there's audio, transcribe it and append to text symptoms.
+        const audioDataUri = await fileToDataUri(symptomsAudio);
+        const sttResponse = await ai.generate({
+            prompt: `Transcribe the following audio. The speaker is talking in ${language || 'English'}.
+Audio: {{media url=audioDataUri}}`,
+            context: { audioDataUri },
+        });
+        const transcribedText = sttResponse.text;
+        if (transcribedText) {
+            combinedSymptoms = `${symptoms ? symptoms + ' ' : ''}${transcribedText}`;
+        }
+    }
+
+
+    if (combinedSymptoms.trim().length > 0) {
+      result = await processSymptoms({ animalPhotoDataUri, symptoms: combinedSymptoms, language: language || 'English' });
       type = 'symptoms';
     } else {
       result = await analyzeAnimalImage({ animalPhotoDataUri });

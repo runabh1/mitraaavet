@@ -8,7 +8,7 @@ import { ArrowLeft, Mic, Square, User, Bot, Volume2, Loader2, Send } from 'lucid
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { voiceAssistant } from '@/ai/flows/voice-assistant';
+import { processVoiceQuery } from '@/ai/flows/process-voice-query';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -19,20 +19,24 @@ interface Message {
   audioDataUri?: string;
 }
 
-async function handleVoiceQuery(prevState: any, formData: FormData): Promise<{ messages: Message[] } | { error: string }> {
-    const question = formData.get('question') as string;
+async function handleVoiceQueryAction(prevState: any, formData: FormData): Promise<{ messages: Message[] } | { error: string }> {
+    const audioBlob = formData.get('audioBlob') as Blob;
     const language = formData.get('language') as string || 'English';
-    if (!question || question.trim().length === 0) {
-        return { error: 'Question cannot be empty.' };
+
+    if (!audioBlob || audioBlob.size === 0) {
+        return { error: 'No audio was recorded.' };
     }
-    
+
     try {
-        const response = await voiceAssistant({
-            question,
+        const audioBuffer = await audioBlob.arrayBuffer();
+        const audioDataUri = `data:audio/webm;base64,${Buffer.from(audioBuffer).toString('base64')}`;
+
+        const response = await processVoiceQuery({
+            audioDataUri,
             language,
         });
 
-        const newUserMessage: Message = { id: Date.now(), role: 'user', text: question };
+        const newUserMessage: Message = { id: Date.now(), role: 'user', text: response.question };
         const newAssistantMessage: Message = { id: Date.now() + 1, role: 'assistant', text: response.answer, audioDataUri: response.audioDataUri };
         
         return { messages: [newUserMessage, newAssistantMessage] };
@@ -48,13 +52,13 @@ export default function VoiceChatPage() {
     const [isLoggedOut, setIsLoggedOut] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [isRecording, setIsRecording] = useState(false);
-    const [inputValue, setInputValue] = useState('');
     const [language, setLanguage] = useState('English');
-    const recognitionRef = useRef<SpeechRecognition | null>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    const [state, formAction, isPending] = useActionState(handleVoiceQuery, { messages: [] });
+    const [state, formAction, isPending] = useActionState(handleVoiceQueryAction, { messages: [] });
 
     useEffect(() => {
         const savedLanguage = localStorage.getItem('language') || 'English';
@@ -67,7 +71,6 @@ export default function VoiceChatPage() {
         }
         if ('messages' in state && state.messages) {
             setMessages(prev => [...prev, ...state.messages]);
-            setInputValue('');
         }
     }, [state, toast]);
 
@@ -83,39 +86,8 @@ export default function VoiceChatPage() {
             audioRef.current.src = lastMessage.audioDataUri;
             audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
         }
-
     }, [messages]);
 
-    useEffect(() => {
-        const languageCode = language === 'Assamese' ? 'as-IN' : language === 'Hindi' ? 'hi-IN' : 'en-US';
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = languageCode;
-
-            recognition.onresult = (event) => {
-                let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    }
-                }
-                if (finalTranscript) {
-                    setInputValue(prev => prev + finalTranscript);
-                }
-            };
-            recognition.onerror = (event) => {
-                toast({ variant: 'destructive', title: 'Speech Error', description: event.error });
-                setIsRecording(false);
-            };
-            recognition.onend = () => setIsRecording(false);
-            recognitionRef.current = recognition;
-        } else {
-            toast({ variant: 'destructive', title: 'Not Supported', description: 'Speech recognition is not supported in your browser.' });
-        }
-    }, [toast, language]);
 
     const handleLogout = () => {
         localStorage.removeItem('userLoggedIn');
@@ -124,21 +96,44 @@ export default function VoiceChatPage() {
         router.push('/login');
     };
 
-    const toggleRecording = () => {
-        if (!recognitionRef.current) return;
-        if (isRecording) {
-            recognitionRef.current.stop();
-        } else {
-             navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
-                setInputValue('');
-                recognitionRef.current?.start();
-                setIsRecording(true);
-            }).catch(() => {
-                toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please allow microphone access.' });
-            });
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append('audioBlob', audioBlob);
+                formData.append('language', language);
+                formAction(formData);
+                 // Stop all tracks to release the microphone
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (err) {
+            console.error('Microphone access denied:', err);
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'Please allow microphone access.' });
         }
     };
-    
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            mediaRecorderRef.current.stop();
+        }
+        setIsRecording(false);
+    };
+
     const playAudio = (audioDataUri: string) => {
         if (audioRef.current) {
             audioRef.current.src = audioDataUri;
@@ -166,7 +161,7 @@ export default function VoiceChatPage() {
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col gap-4">
                         <ScrollArea className="flex-1 space-y-4 pr-4" ref={scrollAreaRef}>
-                            {messages.length === 0 && <p className="text-center text-muted-foreground">Ask me anything about your animal's health!</p>}
+                            {messages.length === 0 && <p className="text-center text-muted-foreground">Press the mic to start speaking.</p>}
                             {messages.map((msg) => (
                                 <div key={msg.id} className={`flex items-start gap-3 my-4 ${msg.role === 'user' ? 'justify-end' : ''}`}>
                                     {msg.role === 'assistant' && (
@@ -189,31 +184,30 @@ export default function VoiceChatPage() {
                                     )}
                                 </div>
                             ))}
+                            {isPending && (
+                               <div className="flex items-start gap-3 my-4 justify-end">
+                                    <div className="rounded-lg p-3 max-w-[80%] bg-primary text-primary-foreground flex items-center gap-2">
+                                        <Loader2 className="animate-spin h-4 w-4"/>
+                                        <span className="text-sm">Thinking...</span>
+                                    </div>
+                                    <Avatar className="h-9 w-9">
+                                        <AvatarFallback><User /></AvatarFallback>
+                                    </Avatar>
+                               </div>
+                            )}
                         </ScrollArea>
-                        <form action={formAction} className="relative mt-auto">
-                             <input type="hidden" name="language" value={language} />
-                            <Textarea
-                                name="question"
-                                placeholder="Type your question or use the mic..."
-                                className="pr-20"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        if (!isPending) (e.target as HTMLFormElement).form?.requestSubmit();
-                                    }
-                                }}
-                            />
-                            <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1">
-                                <Button type="button" variant="ghost" size="icon" onClick={toggleRecording} disabled={isPending}>
-                                    {isRecording ? <Square className="text-destructive" /> : <Mic />}
-                                </Button>
-                                <Button type="submit" size="icon" disabled={isPending || !inputValue.trim()}>
-                                    {isPending ? <Loader2 className="animate-spin" /> : <Send />}
-                                </Button>
-                            </div>
-                        </form>
+                        <div className="flex justify-center items-center pt-4">
+                            <Button
+                                type="button"
+                                variant={isRecording ? 'destructive' : 'default'}
+                                size="lg"
+                                className="rounded-full w-20 h-20"
+                                onClick={isRecording ? stopRecording : startRecording}
+                                disabled={isPending}
+                            >
+                                {isPending ? <Loader2 className="animate-spin h-8 w-8" /> : <Mic className="h-8 w-8" />}
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </main>
