@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { analyzeAnimalImage } from '@/ai/flows/analyze-animal-image';
 import { processSymptoms } from '@/ai/flows/process-symptoms';
+import { textToSpeech } from '@/ai/flows/text-to-speech';
 import type { DiagnosisResultState } from './types';
 
 const formSchema = z.object({
@@ -22,6 +23,22 @@ async function fileToDataUri(file: File): Promise<string> {
   const buffer = Buffer.from(arrayBuffer);
   return `data:${file.type};base64,${buffer.toString('base64')}`;
 }
+
+async function getAudioForDiagnosis(diagnosisResult: any) {
+    const textToRead = `
+        Possible Diagnosis: ${diagnosisResult.diagnosis}.
+        Urgency Level: ${'urgency' in diagnosisResult ? diagnosisResult.urgency : diagnosisResult.emergencyLevel}.
+        ${'careInstructions' in diagnosisResult && diagnosisResult.careInstructions ? `Care Recommendations: ${diagnosisResult.careInstructions}` : ''}
+    `;
+    try {
+        const audioResult = await textToSpeech(textToRead.trim());
+        return audioResult.media;
+    } catch (e) {
+        console.error("TTS generation failed:", e);
+        return null;
+    }
+}
+
 
 export async function getDiagnosisAction(
   prevState: DiagnosisResultState,
@@ -45,15 +62,23 @@ export async function getDiagnosisAction(
   try {
     const animalPhotoDataUri = await fileToDataUri(animalPhoto);
 
+    let result;
+    let type: 'symptoms' | 'image';
+
     if (symptoms && symptoms.trim().length > 0) {
       // Both image and symptoms are provided
-      const result = await processSymptoms({ animalPhotoDataUri, symptoms });
-      return { data: { ...result, type: 'symptoms' }, error: null, pending: false };
+      result = await processSymptoms({ animalPhotoDataUri, symptoms });
+      type = 'symptoms';
     } else {
       // Only image is provided
-      const result = await analyzeAnimalImage({ animalPhotoDataUri });
-      return { data: { ...result, type: 'image' }, error: null, pending: false };
+      result = await analyzeAnimalImage({ animalPhotoDataUri });
+      type = 'image';
     }
+
+    const audioDataUri = await getAudioForDiagnosis(result);
+
+    return { data: { ...result, type, audioDataUri }, error: null, pending: false };
+
   } catch (e: any) {
     console.error(e);
     return {

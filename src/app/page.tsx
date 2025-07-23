@@ -8,6 +8,9 @@ import { VetLocator } from '@/components/vet-locator';
 import { getDiagnosisAction } from '@/lib/actions';
 import type { DiagnosisResultState } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Syringe, ShoppingCart, Activity } from 'lucide-react';
 
 const initialState: DiagnosisResultState = {
   data: null,
@@ -23,15 +26,39 @@ export default function Home() {
       <Header />
       <main className="flex-1 container mx-auto p-4 md:p-8">
         <div className="grid gap-8 lg:grid-cols-2">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2 font-headline">
-              AI Veterinary Assistant
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Upload a photo of your animal and describe its symptoms to get an
-              AI-powered analysis.
-            </p>
-            <DiagnosisForm formAction={formAction} state={state} />
+          <div className="space-y-8">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2 font-headline">
+                AI Veterinary Assistant
+              </h1>
+              <p className="text-muted-foreground mb-6">
+                Upload a photo of your animal and describe its symptoms to get an
+                AI-powered analysis.
+              </p>
+              <DiagnosisForm formAction={formAction} state={state} />
+            </div>
+             <Card>
+              <CardHeader>
+                <CardTitle>More Services</CardTitle>
+                <CardDescription>
+                  Explore other features to help you care for your animals.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Button variant="outline" className="flex-col h-24" disabled>
+                  <Activity className="h-6 w-6 mb-2" />
+                  Health Tracker
+                </Button>
+                 <Button variant="outline" className="flex-col h-24" disabled>
+                  <Syringe className="h-6 w-6 mb-2" />
+                  Feed Advice
+                </Button>
+                <Button variant="outline" className="flex-col h-24" disabled>
+                   <ShoppingCart className="h-6 w-6 mb-2" />
+                  Marketplace
+                 </Button>
+              </CardContent>
+            </Card>
           </div>
           <div className="space-y-8">
             {state.pending && (
