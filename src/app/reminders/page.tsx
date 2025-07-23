@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Header from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, PlusCircle, Bell, Syringe, Heart, Baby, ALargeSmall } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Bell, Syringe, Heart, Baby, ALargeSmall, Calendar as CalendarIcon, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,10 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
 
 type Reminder = {
     id: number;
@@ -20,11 +24,25 @@ type Reminder = {
     notes: string;
 };
 
+type VaccinationRecord = {
+    id: number;
+    name: string;
+    date: Date;
+    status: 'done' | 'due';
+};
+
 const initialReminders: Reminder[] = [
     { id: 1, type: 'Vaccination', date: '2024-08-01', notes: 'FMD Booster Shot' },
     { id: 2, type: 'Deworming', date: '2024-09-15', notes: 'Oral medication' },
     { id: 3, type: 'Pregnancy Due', date: '2024-10-20', notes: 'Expected delivery for Cow #3' },
     { id: 4, type: 'Heat Cycle', date: '2024-08-12', notes: 'Predicted for Heifer #1' },
+];
+
+const initialVaccinations: VaccinationRecord[] = [
+    { id: 1, name: 'Anthrax Vaccine', date: new Date('2024-07-15'), status: 'done'},
+    { id: 2, name: 'FMD Booster', date: new Date('2024-08-01'), status: 'due' },
+    { id: 3, name: 'Rabies Shot', date: new Date('2024-06-20'), status: 'done' },
+    { id: 4, name: 'Tetanus Toxoid', date: new Date('2024-09-10'), status: 'due' },
 ];
 
 const reminderIcons = {
@@ -39,7 +57,10 @@ export default function RemindersPage() {
     const { toast } = useToast();
     const [isLoggedOut, setIsLoggedOut] = useState(false);
     const [reminders, setReminders] = useState<Reminder[]>(initialReminders);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [isCalendarDialogOpen, setIsCalendarDialogOpen] = useState(false);
+    const [vaccinations, setVaccinations] = useState<VaccinationRecord[]>(initialVaccinations);
+
 
     const handleLogout = () => {
       localStorage.removeItem('userLoggedIn');
@@ -67,7 +88,7 @@ export default function RemindersPage() {
                 title: "Reminder Added",
                 description: `A new reminder for ${type} has been scheduled.`,
             });
-            setIsDialogOpen(false);
+            setIsAddDialogOpen(false);
             (e.target as HTMLFormElement).reset();
         }
     }
@@ -85,49 +106,86 @@ export default function RemindersPage() {
                     Back to Dashboard
                 </Button>
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
+                    <CardHeader className="flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                             <CardTitle className="text-2xl">Care Reminders</CardTitle>
                             <CardDescription>Get reminders for vaccinations, heat cycles, and more.</CardDescription>
                         </div>
-                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button>
-                                    <PlusCircle className="mr-2 h-4 w-4"/>
-                                    Add Reminder
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Add a New Care Reminder</DialogTitle>
-                                </DialogHeader>
-                                <form onSubmit={handleAddReminder} className="space-y-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="type">Reminder Type</Label>
-                                        <Select name="type" required>
-                                            <SelectTrigger id="type">
-                                                <SelectValue placeholder="Select a type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Vaccination">Vaccination</SelectItem>
-                                                <SelectItem value="Deworming">Deworming</SelectItem>
-                                                <SelectItem value="Pregnancy Due">Pregnancy Due</SelectItem>
-                                                <SelectItem value="Heat Cycle">Heat Cycle</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                        <div className="flex gap-2">
+                             <Dialog open={isCalendarDialogOpen} onOpenChange={setIsCalendarDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline">
+                                        <Eye className="mr-2 h-4 w-4"/>
+                                        Vaccination Calendar
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Vaccination Calendar</DialogTitle>
+                                        <DialogDescription>
+                                            Track completed and upcoming vaccinations for your animal.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="flex justify-center">
+                                       <Calendar
+                                            mode="multiple"
+                                            selected={vaccinations.map(v => v.date)}
+                                            modifiers={{
+                                                done: vaccinations.filter(v => v.status === 'done').map(v => v.date),
+                                                due: vaccinations.filter(v => v.status === 'due').map(v => v.date),
+                                            }}
+                                            modifiersClassNames={{
+                                                done: 'bg-green-200 text-green-900 rounded-full',
+                                                due: 'bg-yellow-200 text-yellow-900 rounded-full',
+                                            }}
+                                            className="rounded-md border"
+                                        />
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="date">Date</Label>
-                                        <Input id="date" name="date" type="date" required />
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex items-center gap-2"><div className="h-4 w-4 rounded-full bg-green-200" /> Vaccination Done</div>
+                                        <div className="flex items-center gap-2"><div className="h-4 w-4 rounded-full bg-yellow-200" /> Vaccination Due</div>
                                     </div>
-                                     <div className="grid gap-2">
-                                        <Label htmlFor="notes">Notes</Label>
-                                        <Input id="notes" name="notes" type="text" placeholder="e.g., FMD Booster for Cow #3" required />
-                                    </div>
-                                    <Button type="submit" className="w-full">Save Reminder</Button>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
+                                </DialogContent>
+                            </Dialog>
+                            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button>
+                                        <PlusCircle className="mr-2 h-4 w-4"/>
+                                        Add Reminder
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Add a New Care Reminder</DialogTitle>
+                                    </DialogHeader>
+                                    <form onSubmit={handleAddReminder} className="space-y-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="type">Reminder Type</Label>
+                                            <Select name="type" required>
+                                                <SelectTrigger id="type">
+                                                    <SelectValue placeholder="Select a type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Vaccination">Vaccination</SelectItem>
+                                                    <SelectItem value="Deworming">Deworming</SelectItem>
+                                                    <SelectItem value="Pregnancy Due">Pregnancy Due</SelectItem>
+                                                    <SelectItem value="Heat Cycle">Heat Cycle</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="date">Date</Label>
+                                            <Input id="date" name="date" type="date" required />
+                                        </div>
+                                         <div className="grid gap-2">
+                                            <Label htmlFor="notes">Notes</Label>
+                                            <Input id="notes" name="notes" type="text" placeholder="e.g., FMD Booster for Cow #3" required />
+                                        </div>
+                                        <Button type="submit" className="w-full">Save Reminder</Button>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {reminders.length > 0 ? (
