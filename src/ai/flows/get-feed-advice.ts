@@ -15,6 +15,7 @@ const GetFeedAdviceInputSchema = z.object({
   age: z.string().describe("The age of the animal (e.g., '6 months', '2 years')."),
   species: z.string().describe("The species of the animal (e.g., 'Goat', 'Cow', 'Chicken')."),
   location: z.string().describe("The user's location, to infer local weather conditions (e.g., 'Assam, India')."),
+  language: z.string().describe("The language for the response (e.g., 'English', 'Assamese')."),
 });
 export type GetFeedAdviceInput = z.infer<typeof GetFeedAdviceInputSchema>;
 
@@ -33,12 +34,13 @@ const prompt = ai.definePrompt({
   name: 'getFeedAdvicePrompt',
   input: {schema: GetFeedAdviceInputSchema},
   output: {schema: GetFeedAdviceOutputSchema},
-  prompt: `You are a veterinary nutritionist advising a farmer in a rural area. Generate a simple, practical, and personalized daily feeding plan for their animal.
+  prompt: `You are a veterinary nutritionist advising a farmer in a rural area. Generate a simple, practical, and personalized daily feeding plan for their animal. Respond in the requested language.
 
 Animal Details:
 - Species: {{{species}}}
 - Age: {{{age}}}
 - Location (for weather context): {{{location}}}
+- Language for response: {{{language}}}
 
 Based on these details, calculate a custom feed plan. Adjust the plan for likely weather conditions in the given location. Provide specific quantities where possible. Be concise and clear.
 `,

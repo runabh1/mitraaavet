@@ -24,6 +24,7 @@ const feedAdviceFormSchema = z.object({
     species: z.string().min(1, 'Species is required.'),
     age: z.string().min(1, 'Age is required.'),
     location: z.string().min(1, 'Location is required.'),
+    language: z.string().min(1, 'Language is required.'),
 });
 
 async function fileToDataUri(file: File): Promise<string> {
@@ -104,6 +105,7 @@ export async function getFeedAdviceAction(
         species: formData.get('species'),
         age: formData.get('age'),
         location: formData.get('location'),
+        language: formData.get('language'),
     });
 
     if (!validatedFields.success) {
@@ -116,10 +118,10 @@ export async function getFeedAdviceAction(
         };
     }
     
-    const { species, age, location } = validatedFields.data;
+    const { species, age, location, language } = validatedFields.data;
 
     try {
-        const result = await getFeedAdvice({ species, age, location });
+        const result = await getFeedAdvice({ species, age, location, language });
         return { data: result, error: null, pending: false };
     } catch (e: any) {
         console.error(e);

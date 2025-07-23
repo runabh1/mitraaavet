@@ -1,6 +1,6 @@
 
 'use client';
-import React, { useState, useActionState } from 'react';
+import React, { useState, useActionState, useEffect } from 'react';
 import Header from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -41,6 +41,12 @@ export default function FeedAdvicePage() {
     const router = useRouter();
     const [isLoggedOut, setIsLoggedOut] = useState(false);
     const [state, formAction] = useActionState(getFeedAdviceAction, initialState);
+    const [language, setLanguage] = useState('English');
+
+    useEffect(() => {
+        const savedLanguage = localStorage.getItem('language') || 'English';
+        setLanguage(savedLanguage);
+    }, []);
 
     const handleLogout = () => {
       localStorage.removeItem('userLoggedIn');
@@ -69,6 +75,7 @@ export default function FeedAdvicePage() {
                         </CardHeader>
                         <CardContent>
                            <form action={formAction} className="space-y-4">
+                            <input type="hidden" name="language" value={language} />
                              <div className="grid gap-2">
                                 <Label htmlFor="species">Animal Species</Label>
                                 <Input id="species" name="species" placeholder="e.g., Cow, Chicken, Goat" required />
