@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import Header from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, PlusCircle } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { HealthChart } from '@/components/health-chart';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ const initialHealthData = {
     { date: '2024-06-01', value: 230 },
     { date: '2024-07-01', value: 240 },
   ],
+  disease_history: ["FMD - 2024", "Foot rot - 2023"],
 };
 
 export default function HealthTrackerPage() {
@@ -49,26 +50,51 @@ export default function HealthTrackerPage() {
         const formData = new FormData(e.currentTarget);
         const milkYield = formData.get('milkYield') as string;
         const weight = formData.get('weight') as string;
+        const newDisease = formData.get('disease') as string;
         const today = new Date().toISOString().split('T')[0];
+
+        let updated = false;
 
         if (milkYield) {
             setHealthData(prev => ({
                 ...prev,
                 milk_yield: [...prev.milk_yield, { date: today, value: parseFloat(milkYield) }]
             }));
+            updated = true;
         }
         if (weight) {
             setHealthData(prev => ({
                 ...prev,
                 weight: [...prev.weight, { date: today, value: parseFloat(weight) }]
             }));
+            updated = true;
+        }
+        if (newDisease) {
+            setHealthData(prev => ({
+                ...prev,
+                disease_history: [...prev.disease_history, newDisease]
+            }));
+            updated = true;
         }
 
-        toast({
-            title: "Data Logged",
-            description: "Your animal's health data has been updated.",
-        });
+        if (updated) {
+            toast({
+                title: "Data Logged",
+                description: "Your animal's health data has been updated.",
+            });
+        }
         setIsDialogOpen(false);
+    }
+    
+    const removeDisease = (indexToRemove: number) => {
+        setHealthData(prev => ({
+            ...prev,
+            disease_history: prev.disease_history.filter((_, index) => index !== indexToRemove)
+        }));
+         toast({
+            title: "Entry Removed",
+            description: "The disease history entry has been removed.",
+        });
     }
 
     if (isLoggedOut) {
@@ -109,7 +135,13 @@ export default function HealthTrackerPage() {
                                         <Label htmlFor="weight">Today's Weight (in kg)</Label>
                                         <Input id="weight" name="weight" type="number" step="0.1" placeholder="e.g., 245.5"/>
                                     </div>
-                                    <Button type="submit" className="w-full">Save Data</Button>
+                                     <div className="grid gap-2">
+                                        <Label htmlFor="disease">Add Disease/Treatment Record</Label>
+                                        <Input id="disease" name="disease" type="text" placeholder="e.g., Vaccinated for Anthrax"/>
+                                    </div>
+                                    <DialogFooter>
+                                     <Button type="submit" className="w-full">Save Data</Button>
+                                    </DialogFooter>
                                 </form>
                             </DialogContent>
                         </Dialog>
@@ -125,10 +157,20 @@ export default function HealthTrackerPage() {
                         </div>
                          <div className="space-y-4">
                              <h4 className="font-semibold">Disease & Treatment History</h4>
-                             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                <li>FMD - 2024</li>
-                                <li>Foot rot - 2023</li>
-                             </ul>
+                            {healthData.disease_history.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {healthData.disease_history.map((record, index) => (
+                                        <li key={index} className="flex items-center justify-between p-2 border rounded-lg">
+                                            <span className="text-muted-foreground">{record}</span>
+                                            <Button variant="ghost" size="icon" onClick={() => removeDisease(index)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No disease history recorded yet.</p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
