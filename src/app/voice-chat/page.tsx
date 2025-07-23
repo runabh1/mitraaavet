@@ -96,11 +96,11 @@ export default function VoiceChatPage() {
             recognition.lang = languageCode;
 
             recognition.onresult = (event) => {
-                let interimTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    interimTranscript += event.results[i][0].transcript;
+                let finalTranscript = '';
+                 for (let i = 0; i < event.results.length; i++) {
+                    finalTranscript += event.results[i][0].transcript;
                 }
-                setInputValue(prev => prev + interimTranscript);
+                setInputValue(finalTranscript);
             };
             recognition.onerror = (event) => {
                 toast({ variant: 'destructive', title: 'Speech Error', description: event.error });
