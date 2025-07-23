@@ -18,6 +18,7 @@ const ProcessSymptomsInputSchema = z.object({
       "A photo of the animal, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
   symptoms: z.string().describe('The symptoms described by the user.'),
+  language: z.string().describe('The language of the user input (e.g., "Assamese", "Hindi", "English").'),
 });
 export type ProcessSymptomsInput = z.infer<typeof ProcessSymptomsInputSchema>;
 
@@ -36,8 +37,9 @@ const prompt = ai.definePrompt({
   name: 'processSymptomsPrompt',
   input: {schema: ProcessSymptomsInputSchema},
   output: {schema: ProcessSymptomsOutputSchema},
-  prompt: `Given the following image of an animal and the described symptoms, provide a disease diagnosis, the urgency level, and care instructions.
+  prompt: `Given the following image of an animal and the described symptoms, provide a disease diagnosis, the urgency level, and care instructions. Respond in the same language as the input.
 
+Language: {{{language}}}
 Symptoms: {{{symptoms}}}
 Animal Photo: {{media url=animalPhotoDataUri}}
 

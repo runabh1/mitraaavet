@@ -9,6 +9,7 @@ import type { DiagnosisResultState, FeedAdviceState } from './types';
 
 const diagnosisFormSchema = z.object({
   symptoms: z.string().optional(),
+  language: z.string().optional(),
   animalPhoto: z
     .instanceof(File, { message: 'Image is required.' })
     .refine((file) => file.size > 0, 'Image is required.')
@@ -53,6 +54,7 @@ export async function getDiagnosisAction(
 ): Promise<DiagnosisResultState> {
   const validatedFields = diagnosisFormSchema.safeParse({
     symptoms: formData.get('symptoms'),
+    language: formData.get('language'),
     animalPhoto: formData.get('animalPhoto'),
   });
 
@@ -64,7 +66,7 @@ export async function getDiagnosisAction(
     };
   }
 
-  const { animalPhoto, symptoms } = validatedFields.data;
+  const { animalPhoto, symptoms, language } = validatedFields.data;
 
   try {
     const animalPhotoDataUri = await fileToDataUri(animalPhoto);
@@ -73,11 +75,9 @@ export async function getDiagnosisAction(
     let type: 'symptoms' | 'image';
 
     if (symptoms && symptoms.trim().length > 0) {
-      // Both image and symptoms are provided
-      result = await processSymptoms({ animalPhotoDataUri, symptoms });
+      result = await processSymptoms({ animalPhotoDataUri, symptoms, language: language || 'English' });
       type = 'symptoms';
     } else {
-      // Only image is provided
       result = await analyzeAnimalImage({ animalPhotoDataUri });
       type = 'image';
     }

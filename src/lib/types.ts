@@ -20,3 +20,5 @@ export type FeedAdviceState = {
   error: string | null;
   pending: boolean;
 };
+
+export type Language = 'English' | 'Hindi' | 'Assamese';

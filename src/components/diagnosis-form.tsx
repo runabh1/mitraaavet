@@ -39,19 +39,25 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [symptoms, setSymptoms] = useState('');
   const [isRecording, setIsRecording] = useState(false);
+  const [language, setLanguage] = useState('English');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    // SpeechRecognition is only available in the browser
+    const savedLanguage = localStorage.getItem('language') || 'English';
+    setLanguage(savedLanguage);
+  }, []);
+
+  useEffect(() => {
+    const languageCode = language === 'Assamese' ? 'as-IN' : language === 'Hindi' ? 'hi-IN' : 'en-US';
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      recognition.lang = languageCode;
 
       recognition.onresult = (event) => {
         let interimTranscript = '';
@@ -77,10 +83,7 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
       };
       
       recognition.onend = () => {
-        if (isRecording) {
-            // If it stops unexpectedly, restart it.
-            recognition.start();
-        }
+        setIsRecording(false);
       };
 
       recognitionRef.current = recognition;
@@ -91,7 +94,7 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
     return () => {
       recognitionRef.current?.stop();
     }
-  }, [isRecording, toast]);
+  }, [toast, language]);
 
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,7 +121,6 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
       recognitionRef.current.stop();
       setIsRecording(false);
     } else {
-      // Request microphone permission and start
        navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
            recognitionRef.current?.start();
            setIsRecording(true);
@@ -133,7 +135,6 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
     }
   };
   
-  // Cleanup object URL
   useEffect(() => {
     return () => {
       if (previewUrl) {
@@ -144,6 +145,7 @@ export default function DiagnosisForm({ formAction, state }: DiagnosisFormProps)
 
   return (
     <form action={formAction}>
+      <input type="hidden" name="language" value={language} />
       <Card>
         <CardContent className="p-6 space-y-6">
           <div className="space-y-2">

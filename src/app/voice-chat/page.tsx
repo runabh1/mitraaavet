@@ -21,6 +21,7 @@ interface Message {
 
 async function handleVoiceQuery(prevState: any, formData: FormData): Promise<{ messages: Message[] } | { error: string }> {
     const question = formData.get('question') as string;
+    const language = formData.get('language') as string || 'English';
     if (!question || question.trim().length === 0) {
         return { error: 'Question cannot be empty.' };
     }
@@ -28,15 +29,12 @@ async function handleVoiceQuery(prevState: any, formData: FormData): Promise<{ m
     try {
         const response = await voiceAssistant({
             question,
-            language: 'English', // Hardcoded for now, will connect to header language later
+            language,
         });
 
         const newUserMessage: Message = { id: Date.now(), role: 'user', text: question };
         const newAssistantMessage: Message = { id: Date.now() + 1, role: 'assistant', text: response.answer, audioDataUri: response.audioDataUri };
         
-        // This is not ideal, we should be getting previous messages from the state
-        // but useActionState doesn't seem to pass the previous state correctly in this setup.
-        // For the demo, we'll just return the new messages.
         return { messages: [newUserMessage, newAssistantMessage] };
 
     } catch(e: any) {
@@ -51,11 +49,17 @@ export default function VoiceChatPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [isRecording, setIsRecording] = useState(false);
     const [inputValue, setInputValue] = useState('');
+    const [language, setLanguage] = useState('English');
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const [state, formAction, isPending] = useActionState(handleVoiceQuery, { messages: [] });
+
+    useEffect(() => {
+        const savedLanguage = localStorage.getItem('language') || 'English';
+        setLanguage(savedLanguage);
+    }, []);
 
     useEffect(() => {
         if ('error' in state && state.error) {
@@ -68,14 +72,12 @@ export default function VoiceChatPage() {
     }, [state, toast]);
 
     useEffect(() => {
-        // Scroll to bottom when new messages are added
         if (scrollAreaRef.current) {
             scrollAreaRef.current.scrollTo({
                 top: scrollAreaRef.current.scrollHeight,
                 behavior: 'smooth'
             });
         }
-        // Play audio for the last assistant message
         const lastMessage = messages[messages.length - 1];
         if (lastMessage?.role === 'assistant' && lastMessage.audioDataUri && audioRef.current) {
             audioRef.current.src = lastMessage.audioDataUri;
@@ -85,12 +87,13 @@ export default function VoiceChatPage() {
     }, [messages]);
 
     useEffect(() => {
+        const languageCode = language === 'Assamese' ? 'as-IN' : language === 'Hindi' ? 'hi-IN' : 'en-US';
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
-            recognition.lang = 'en-US'; // This should be dynamic based on selected language
+            recognition.lang = languageCode;
 
             recognition.onresult = (event) => {
                 let interimTranscript = '';
@@ -108,7 +111,7 @@ export default function VoiceChatPage() {
         } else {
             toast({ variant: 'destructive', title: 'Not Supported', description: 'Speech recognition is not supported in your browser.' });
         }
-    }, [toast]);
+    }, [toast, language]);
 
     const handleLogout = () => {
         localStorage.removeItem('userLoggedIn');
@@ -155,7 +158,7 @@ export default function VoiceChatPage() {
                 <Card className="flex-1 flex flex-col">
                     <CardHeader>
                         <CardTitle>Voice Assistant</CardTitle>
-                        <CardDescription>Ask questions about your pet and get voice responses.</CardDescription>
+                        <CardDescription>Ask questions about your pet and get voice responses. Current language: {language}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 flex flex-col gap-4">
                         <ScrollArea className="flex-1 space-y-4 pr-4" ref={scrollAreaRef}>
@@ -184,6 +187,7 @@ export default function VoiceChatPage() {
                             ))}
                         </ScrollArea>
                         <form action={formAction} className="relative mt-auto">
+                             <input type="hidden" name="language" value={language} />
                             <Textarea
                                 name="question"
                                 placeholder="Type your question or use the mic..."

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -22,6 +22,20 @@ export default function Header({ onLogout }: HeaderProps) {
   const [language, setLanguage] = React.useState('English');
   const router = useRouter();
 
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language');
+    if (savedLanguage) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  const handleLanguageChange = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+    // Force a re-render of the page to apply language changes
+    window.location.reload();
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
@@ -39,13 +53,13 @@ export default function Header({ onLogout }: HeaderProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setLanguage('English')}>
+                <DropdownMenuItem onSelect={() => handleLanguageChange('English')}>
                   English
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setLanguage('Hindi')}>
+                <DropdownMenuItem onSelect={() => handleLanguageChange('Hindi')}>
                   हिन्दी
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setLanguage('Assamese')}>
+                <DropdownMenuItem onSelect={() => handleLanguageChange('Assamese')}>
                   অসমীয়া
                 </DropdownMenuItem>
               </DropdownMenuContent>
