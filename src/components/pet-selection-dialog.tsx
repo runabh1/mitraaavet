@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { PawPrint, Bird, Fish, Rabbit } from 'lucide-react';
+import { PawPrint, Bird, Fish, Wheat } from 'lucide-react';
 
 interface PetSelectionDialogProps {
   isOpen: boolean;
@@ -19,8 +19,8 @@ interface PetSelectionDialogProps {
 const petOptions = [
     { name: 'Cattle', icon: <PawPrint className="h-10 w-10 mx-auto mb-2" /> },
     { name: 'Poultry', icon: <Bird className="h-10 w-10 mx-auto mb-2" /> },
-    { name: 'Fish', icon: <Fish className="h-10 w-10 mx-auto mb-2" /> },
-    { name: 'Other Livestock', icon: <Rabbit className="h-10 w-10 mx-auto mb-2" /> },
+    { name: 'Farming', icon: <Wheat className="h-10 w-10 mx-auto mb-2" /> },
+    { name: 'Other', icon: <Fish className="h-10 w-10 mx-auto mb-2" /> },
 ]
 
 export default function PetSelectionDialog({ isOpen, onSelectPet }: PetSelectionDialogProps) {
@@ -30,7 +30,7 @@ export default function PetSelectionDialog({ isOpen, onSelectPet }: PetSelection
         <DialogHeader>
           <DialogTitle className="text-2xl font-headline">Welcome to MitraVet!</DialogTitle>
           <DialogDescription>
-            To get started, please tell us what kind of animal you are primarily keeping.
+            To get started, please select your primary focus.
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4 py-4">

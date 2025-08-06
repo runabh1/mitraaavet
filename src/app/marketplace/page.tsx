@@ -55,6 +55,26 @@ const initialListings = [
     dataAiHint: 'pet medicine',
     sellerContact: '+91-9999955555',
   },
+  {
+    id: 'listing5',
+    name: 'Fresh Paddy Seeds (25kg)',
+    category: 'Crops',
+    price: 1200,
+    location: 'Nalbari District',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAiHint: 'paddy seeds',
+    sellerContact: '+91-9999944444',
+  },
+  {
+    id: 'listing6',
+    name: 'Manual Power Tiller',
+    category: 'Equipment',
+    price: 35000,
+    location: 'Jorhat Town',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAiHint: 'power tiller',
+    sellerContact: '+91-9999933333',
+  },
 ];
 
 type Listing = typeof initialListings[0];
@@ -119,9 +139,11 @@ function PostAdDialog({ onAddListing }: { onAddListing: (listing: Listing) => vo
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Animals">Animals</SelectItem>
+                                <SelectItem value="Crops">Crops</SelectItem>
                                 <SelectItem value="Feed">Feed</SelectItem>
-                                <SelectItem value="Accessories">Accessories</SelectItem>
                                 <SelectItem value="Medicine">Medicine</SelectItem>
+                                <SelectItem value="Equipment">Equipment</SelectItem>
+                                <SelectItem value="Accessories">Accessories</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -189,7 +211,7 @@ export default function MarketplacePage() {
                     <CardHeader className="flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
                             <CardTitle className="text-2xl">Marketplace</CardTitle>
-                            <CardDescription>Buy and sell animals, feed, and accessories.</CardDescription>
+                            <CardDescription>Buy and sell animals, crops, equipment, and more.</CardDescription>
                         </div>
                         <PostAdDialog onAddListing={handleAddListing} />
                     </CardHeader>
@@ -211,9 +233,11 @@ export default function MarketplacePage() {
                                <SelectContent>
                                    <SelectItem value="All">All Categories</SelectItem>
                                    <SelectItem value="Animals">Animals</SelectItem>
+                                   <SelectItem value="Crops">Crops</SelectItem>
                                    <SelectItem value="Feed">Feed</SelectItem>
+                                   <SelectItem value="Medicine">Medicine</SelectItem>
+                                   <SelectItem value="Equipment">Equipment</SelectItem>
                                    <SelectItem value="Accessories">Accessories</SelectItem>
-                                    <SelectItem value="Medicine">Medicine</SelectItem>
                                </SelectContent>
                            </Select>
                        </div>

@@ -7,7 +7,9 @@ import { analyzeAnimalImage } from '@/ai/flows/analyze-animal-image';
 import { processSymptoms } from '@/ai/flows/process-symptoms';
 import { textToSpeech } from '@/ai/flows/text-to-speech';
 import { getFeedAdvice } from '@/ai/flows/get-feed-advice';
-import type { DiagnosisResultState, FeedAdviceState } from './types';
+import { diagnoseCrop } from '@/ai/flows/diagnose-crop-flow';
+import { getWeatherAdvice } from '@/ai/flows/get-weather-advice';
+import type { DiagnosisResultState, FeedAdviceState, CropDiagnosisState, WeatherAdviceState } from './types';
 
 const diagnosisFormSchema = z.object({
   symptoms: z.string().optional(),
@@ -23,9 +25,27 @@ const diagnosisFormSchema = z.object({
   symptomsAudio: z.instanceof(File).optional(),
 });
 
+const cropDiagnosisFormSchema = z.object({
+    description: z.string().optional(),
+    language: z.string(),
+    cropPhoto: z
+      .instanceof(File, { message: 'Image is required.' })
+      .refine((file) => file.size > 0, 'Image is required.')
+      .refine(
+        (file) => file.type.startsWith('image/'),
+        'Only image files are allowed.'
+      )
+      .refine((file) => file.size < 4 * 1024 * 1024, 'Image must be less than 4MB.'),
+});
+
 const feedAdviceFormSchema = z.object({
     species: z.string().min(1, 'Species is required.'),
     age: z.string().min(1, 'Age is required.'),
+    location: z.string().min(1, 'Location is required.'),
+    language: z.string().min(1, 'Language is required.'),
+});
+
+const weatherAdviceFormSchema = z.object({
     location: z.string().min(1, 'Location is required.'),
     language: z.string().min(1, 'Language is required.'),
 });
@@ -146,6 +166,74 @@ export async function getFeedAdviceAction(
 
     try {
         const result = await getFeedAdvice({ species, age, location, language });
+        return { data: result, error: null, pending: false };
+    } catch (e: any) {
+        console.error(e);
+        return {
+            data: null,
+            error: e.message || 'An unexpected error occurred. Please try again.',
+            pending: false,
+        };
+    }
+}
+
+export async function getCropDiagnosisAction(
+    prevState: CropDiagnosisState,
+    formData: FormData
+): Promise<CropDiagnosisState> {
+    const validatedFields = cropDiagnosisFormSchema.safeParse({
+        description: formData.get('description'),
+        language: formData.get('language'),
+        cropPhoto: formData.get('cropPhoto'),
+    });
+
+    if (!validatedFields.success) {
+        return {
+            data: null,
+            error: validatedFields.error.flatten().fieldErrors.cropPhoto?.[0] || 'Invalid input.',
+            pending: false,
+        }
+    }
+
+    const { cropPhoto, description, language } = validatedFields.data;
+
+    try {
+        const photoDataUri = await fileToDataUri(cropPhoto);
+        const result = await diagnoseCrop({ photoDataUri, description, language });
+        return { data: result, error: null, pending: false };
+    } catch (e: any) {
+        console.error(e);
+        return {
+            data: null,
+            error: e.message || 'An unexpected error occurred.',
+            pending: false,
+        };
+    }
+}
+
+export async function getWeatherAdviceAction(
+  prevState: WeatherAdviceState,
+  formData: FormData
+): Promise<WeatherAdviceState> {
+    const validatedFields = weatherAdviceFormSchema.safeParse({
+        location: formData.get('location'),
+        language: formData.get('language'),
+    });
+
+    if (!validatedFields.success) {
+        const fieldErrors = validatedFields.error.flatten().fieldErrors;
+        const errorMessage = Object.values(fieldErrors).flat()[0] || 'Invalid input.';
+        return {
+            data: null,
+            error: errorMessage,
+            pending: false,
+        };
+    }
+    
+    const { location, language } = validatedFields.data;
+
+    try {
+        const result = await getWeatherAdvice({ location, language });
         return { data: result, error: null, pending: false };
     } catch (e: any) {
         console.error(e);
