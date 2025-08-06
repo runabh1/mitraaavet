@@ -1,37 +1,39 @@
-# MitraVet: AI-Powered Veterinary Assistant
+# MitraVet: AI-Powered Agri-Tech Platform
 
-MitraVet is a comprehensive web application designed to assist rural and semi-urban users in managing their livestock and pets. It leverages AI to provide instant diagnostic support, offers essential care management tools, and connects users with a local marketplace and veterinary services.
+MitraVet is a comprehensive web application designed to assist rural and semi-urban users in managing their livestock, pets, and crops. It leverages AI to provide instant diagnostic support, offers essential care and farm management tools, and connects users with a local marketplace and veterinary/agricultural services.
 
 The application is built with a mobile-first approach, featuring a clean, accessible interface and multilingual support (English, Hindi, and Assamese) to cater to a diverse user base.
 
 ## Core Features
 
-### 1. **AI Doctor**
--   **Image & Symptom Analysis**: Users can upload a photo of their animal and describe its symptoms (either by typing or by voice recording in their selected language).
--   **Instant Diagnosis**: An AI model analyzes the provided information to suggest a potential diagnosis, assess the urgency, and provide immediate care recommendations.
--   **Text-to-Speech**: The diagnosis results can be read aloud to the user, improving accessibility.
+### 1. **AI Diagnostics**
+-   **Animal Doctor**: Users can upload a photo of their animal and describe its symptoms (either by typing or by voice recording in their selected language). An AI model analyzes the provided information to suggest a potential diagnosis, assess the urgency, and provide immediate care recommendations.
+-   **Crop Doctor (Krishiek Feature)**: Similar to the Animal Doctor, users can upload a photo of a diseased crop (e.g., a leaf or stem) to get an AI-powered diagnosis, learn about the potential disease, and receive advice on treatment and prevention.
+-   **Text-to-Speech**: All diagnostic results can be read aloud to the user, improving accessibility.
 
 ### 2. **Voice Assistant**
--   **Conversational AI**: Users can ask questions about animal care in their native language using their voice.
+-   **Conversational AI**: Users can ask questions about animal care or crop management in their native language using their voice.
 -   **End-to-End Voice Interaction**: The app records the user's voice query, sends the audio directly to an AI for processing, and plays back the generated audio response, creating a seamless conversational experience.
 
 ### 3. **Dashboard & Personalization**
--   **Pet Selection**: On first login, users select their primary animal type (e.g., Cattle, Poultry), which customizes the dashboard features.
+-   **Primary Focus Selection**: On first login, users select their primary focus (e.g., Cattle, Poultry, Farming), which customizes the dashboard features.
 -   **Feature Grid**: A central dashboard provides easy access to all the app's features.
 -   **Language Selection**: Users can switch the app's language between English, Hindi, and Assamese.
 
-### 4. **Care Management Tools**
--   **Feed Advice**: Provides personalized daily feeding plans based on the animal's species, age, and the user's location (to account for weather).
--   **Health Tracker**: Allows users to log and visualize key health metrics like milk yield and weight over time using interactive charts.
--   **Care Reminders**: Helps users schedule and track important events like vaccinations, deworming, pregnancy due dates, and heat cycles. Includes a visual vaccination calendar.
+### 4. **Care & Management Tools**
+-   **Feed Advice**: Provides personalized daily feeding plans for livestock based on the animal's species, age, and the user's location (to account for weather).
+-   **Health & Crop Tracker**: Allows users to log and visualize key health metrics for animals (like milk yield and weight) or crop metrics (like yield and growth stages) over time using interactive charts.
+-   **Care & Crop Reminders**: Helps users schedule and track important events like vaccinations, deworming, and pregnancy due dates for animals. For crops, it can track schedules for planting, fertilizing, and harvesting. Includes a visual calendar.
+-   **Weather Advisory (Krishiek Feature)**: Provides localized weather forecasts and AI-driven advice, suggesting optimal times for planting, irrigating, or harvesting based on weather predictions.
 
 ### 5. **Community & Services**
 -   **Vet Connect**: An integrated map that helps users find and get directions to nearby veterinary clinics. It also allows users to book appointments (mocked).
--   **Marketplace**: A platform for users to buy and sell animals, feed, medicine, and accessories. Users can post ads, filter listings by category, and search for items.
+-   **Marketplace**: An expanded platform for users to buy and sell animals, crops, feed, medicine, farming equipment, and accessories. Users can post ads, filter listings by category, and search for items.
+-   **Community Forum (Krishiek Feature)**: A space for users to connect with other farmers and veterinary experts, ask questions, and share knowledge and best practices.
 
 ### 6. **User Profile & Authentication**
 -   **Simple Login**: A mock login system to simulate user accounts.
--   **Profile Management**: Users can view their profile and change their primary animal type.
+-   **Profile Management**: Users can view their profile and change their primary focus (animal type or farming).
 
 ## Technical Stack
 
@@ -47,48 +49,43 @@ The application is built with a mobile-first approach, featuring a clean, access
 ## Prompt to Recreate This App
 
 ```
-You are an expert AI application developer. Your task is to build a comprehensive veterinary assistant application named "MitraVet" from scratch.
+You are an expert AI application developer. Your task is to build a comprehensive agricultural and veterinary assistant application named "MitraVet" from scratch.
 
 **App Name**: MitraVet
 
-**Core Idea**: An AI-powered veterinary assistant for rural and semi-urban users. It should help them detect animal diseases early, manage their animals' health, and connect with local services. The app must be user-friendly, support multiple languages, and work well on mobile devices.
+**Core Idea**: An AI-powered assistant for rural and semi-urban users. It should help them detect animal and crop diseases early, manage their farm's health and productivity, and connect with local services and a community of peers. The app must be user-friendly, support multiple languages (English, Hindi, Assamese), and work well on mobile devices.
 
 **Key Features to Implement**:
 
 1.  **User Authentication & Onboarding**:
-    *   Create a simple login page (email/password). For now, this can be a mock login that uses `localStorage`.
-    *   After the first login, prompt the user to select their primary animal type (e.g., Cattle, Poultry, Fish, Other Livestock) in a dialog. Store this choice in `localStorage`.
+    *   Create a simple mock login page (email/password).
+    *   After the first login, prompt the user to select their primary focus (e.g., Cattle, Poultry, Farming) to customize their experience. Store this choice in `localStorage`.
 
 2.  **Main Dashboard**:
-    *   This is the home page after login.
-    *   It should welcome the user and display their selected animal type.
-    *   Create a grid of feature cards that navigate to the different sections of the app.
-    *   Include a special "Fish/Poultry Monitor" card that is only available if the user selected 'Fish' or 'Poultry'.
+    *   The home page after login, welcoming the user.
+    *   Display a grid of feature cards that navigate to the different sections of the app.
+    *   Include specialized cards that appear based on the user's selected focus.
 
-3.  **AI Doctor**:
-    *   A page with a form where the user can upload an animal's photo.
-    *   Include a textarea for describing symptoms.
-    *   Add a microphone button that allows the user to record their symptoms as a voice note instead of typing.
-    *   The form submission should send the image and the symptom description (text or audio) to an AI flow.
-    *   The AI flow (`processSymptoms`) should analyze the inputs and return a potential diagnosis, an urgency level (e.g., Urgent, Moderate, Low), and care instructions.
-    *   If only an image is provided, a simpler flow (`analyzeAnimalImage`) should be used.
-    *   Display the results clearly on the page. The result card should have a "Read Aloud" button that uses a text-to-speech AI flow to read the diagnosis to the user.
+3.  **AI Diagnostics**:
+    *   **AI Animal Doctor**: A page to upload an animal's photo and describe symptoms (via text or voice note). The AI should return a diagnosis, urgency level, and care instructions.
+    *   **AI Crop Doctor**: A similar page for crops. Users upload a photo of a plant (e.g., a leaf) to get a disease diagnosis and treatment advice.
+    *   **Read Aloud**: All AI-generated results should have a button to read the text aloud using a text-to-speech flow.
 
 4.  **Voice Assistant**:
-    *   A full-screen chat interface.
-    *   The primary input method is a large microphone button. When pressed, it records the user's voice.
-    *   The recorded audio data should be sent directly to an AI flow (`processVoiceQuery`).
-    *   This flow will transcribe the audio, generate a text answer, and convert that answer back into an audio response.
-    *   The page should display the conversation transcript and automatically play the AI's audio response.
+    *   A full-screen chat interface where the primary input is a microphone button.
+    *   The recorded audio data should be sent directly to an AI flow (`processVoiceQuery`) which transcribes, generates an answer, and converts it back to audio.
+    *   The page should display the conversation and auto-play the AI's audio response.
 
 5.  **Care & Management Tools**:
-    *   **Feed Advice**: A form where users enter animal species, age, and location. An AI flow (`getFeedAdvice`) should generate a personalized morning/evening feed plan, considering local weather.
-    *   **Health Tracker**: A page to log and visualize health data. Use charts (from `recharts`) to display trends for "Milk Yield" and "Weight". Allow users to log new data points.
-    *   **Care Reminders**: A page to list upcoming reminders for 'Vaccination', 'Deworming', 'Pregnancy Due', etc. Include a feature to add new reminders and a "Vaccination Calendar" view that visualizes completed and due vaccinations on a calendar component.
+    *   **Feed Advice**: An AI flow to generate personalized livestock feeding plans based on species, age, and location (for weather).
+    *   **Health/Crop Tracker**: A page to log and visualize data. Use charts to show trends for animal health (milk yield, weight) or crop performance.
+    *   **Care & Crop Reminders**: A page to list and add upcoming reminders for animal care (vaccinations, etc.) and farming tasks (planting, fertilizing). Include a visual calendar view.
+    *   **Weather Advisory**: An AI-powered feature that provides local weather forecasts and actionable advice for farming activities.
 
 6.  **Community & Services**:
-    *   **Vet Connect**: Display an embedded map showing nearby vets. List 3-4 sample vet clinics with their address and phone number. Add buttons for "Directions" (opens Google Maps) and "Book Appointment" (a mock booking dialog).
-    *   **Marketplace**: A page to browse listings. Include a search bar and a category filter. Allow users to post a new ad for selling animals, feed, or accessories through a dialog form.
+    *   **Vet Connect**: An embedded map showing nearby vet clinics with contact details and mock appointment booking.
+    *   **Marketplace**: A page to browse and post ads for animals, crops, feed, medicine, and equipment. Include search and category filters.
+    *   **Community Forum**: A section where users can post questions and view discussions, creating a knowledge-sharing community.
 
 **Styling and UI/UX**:
 
@@ -96,15 +93,13 @@ You are an expert AI application developer. Your task is to build a comprehensiv
 -   **Background Color**: Light beige/off-white (`#F5F5DC`)
 -   **Accent/Urgent Color**: Terracotta (`#E07A5F`)
 -   **Font**: 'PT Sans' for all text.
--   **UI Library**: Use ShadCN/UI components for everything (Cards, Buttons, Dialogs, Inputs, etc.).
--   **Icons**: Use `lucide-react` for all icons.
--   **Layout**: The app should be responsive and mobile-first. Use a consistent header across all pages.
+-   **UI Library**: Use ShadCN/UI components for everything.
+-   **Icons**: Use `lucide-react`.
+-   **Layout**: The app should be responsive and mobile-first with a consistent header.
 
 **Technical Implementation (Genkit & AI)**:
 
 -   Use `genkit` for all AI functionality.
--   **Language Support**: The app must support English, Hindi, and Assamese. The user should be able to switch languages from a dropdown in the header. This selection should be stored in `localStorage`.
--   The language selection should be passed to all relevant AI flows so that the AI can understand the user's query and respond in the correct language.
--   For all voice recording features, the selected language must be used to configure the speech-to-text transcription.
--   All server-side logic (calling AI flows) should be handled within Next.js Server Actions. Use the `useActionState` hook for handling form submissions and displaying pending/error states.
+-   The user's selected language (stored in `localStorage`) must be passed to all relevant AI flows to ensure responses are in the correct language.
+-   All server-side logic (calling AI flows) should be handled within Next.js Server Actions, using `useActionState` for form submissions.
 ```
