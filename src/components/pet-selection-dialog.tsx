@@ -20,7 +20,7 @@ const petOptions = [
     { name: 'Cattle', icon: <PawPrint className="h-10 w-10 mx-auto mb-2" /> },
     { name: 'Poultry', icon: <Bird className="h-10 w-10 mx-auto mb-2" /> },
     { name: 'Farming', icon: <Wheat className="h-10 w-10 mx-auto mb-2" /> },
-    { name: 'Other', icon: <Fish className="h-10 w-10 mx-auto mb-2" /> },
+    { name: 'Fish', icon: <Fish className="h-10 w-10 mx-auto mb-2" /> },
 ]
 
 export default function PetSelectionDialog({ isOpen, onSelectPet }: PetSelectionDialogProps) {
