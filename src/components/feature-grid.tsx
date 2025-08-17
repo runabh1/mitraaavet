@@ -3,7 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Stethoscope, Mic, CalendarClock, Wheat, Video, ShoppingCart, LineChart, Droplets, Leaf, CloudSun, MessageSquare } from 'lucide-react';
+import { Stethoscope, Mic, CalendarClock, Wheat, Video, ShoppingCart, LineChart, Droplets, Leaf, CloudSun, MessageSquare, Siren } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface FeatureGridProps {
@@ -14,9 +14,10 @@ export default function FeatureGrid({ petType }: FeatureGridProps) {
   const router = useRouter();
   const isFarming = petType === 'Farming';
 
-  const commonFeatures = [
+  const baseFeatures = [
     { name: 'Voice Chat', icon: <Mic className="h-8 w-8 mb-2" />, path: '/voice-chat', available: true },
     { name: 'Marketplace', icon: <ShoppingCart className="h-8 w-8 mb-2" />, path: '/marketplace', available: true },
+    { name: 'Early Warning System', icon: <Siren className="h-8 w-8 mb-2" />, path: '/regional-alerts', available: true },
   ];
 
   const animalFeatures = [
@@ -36,7 +37,7 @@ export default function FeatureGrid({ petType }: FeatureGridProps) {
       { name: 'Community Forum', icon: <MessageSquare className="h-8 w-8 mb-2" />, path: '/community-forum', available: true },
   ];
 
-  const features = isFarming ? [...commonFeatures, ...farmingFeatures] : [...commonFeatures, ...animalFeatures];
+  const features = isFarming ? [...baseFeatures, ...farmingFeatures] : [...baseFeatures, ...animalFeatures];
 
 
   return (
