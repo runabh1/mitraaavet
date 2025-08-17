@@ -115,6 +115,7 @@ export default function RegionalAlertsPage() {
     const [isLoggedOut, setIsLoggedOut] = useState(false);
     const [state, formAction] = useActionState(getRegionalAlertsAction, initialState);
     const [language, setLanguage] = useState('English');
+    const [submittedPincode, setSubmittedPincode] = useState('');
 
     useEffect(() => {
         const savedLanguage = localStorage.getItem('language') || 'English';
@@ -130,6 +131,12 @@ export default function RegionalAlertsPage() {
     
     if (isLoggedOut) { return null; }
 
+    const handleFormAction = (formData: FormData) => {
+        const pincode = formData.get('pincode') as string;
+        setSubmittedPincode(pincode);
+        formAction(formData);
+    };
+    
     return (
         <div className="flex min-h-screen w-full flex-col">
             <Header onLogout={handleLogout} />
@@ -144,7 +151,7 @@ export default function RegionalAlertsPage() {
                             <CardDescription>Enter a pincode to see potential agricultural and livestock risks in that area.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form action={formAction} className="space-y-4">
+                            <form action={handleFormAction} className="space-y-4">
                                 <input type="hidden" name="language" value={language} />
                                 <div className="grid gap-2">
                                     <Label htmlFor="pincode">Your Pincode</Label>
@@ -166,7 +173,7 @@ export default function RegionalAlertsPage() {
                         {state.data && !state.pending && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Alerts for Pincode: {state.data.alerts.length > 0 ? (new URLSearchParams(window.location.search)).get('pincode') || ''}</CardTitle>
+                                    <CardTitle>Alerts for Pincode: {submittedPincode}</CardTitle>
                                     <CardDescription>{state.data.summary}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
