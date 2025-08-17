@@ -13,6 +13,7 @@ interface FeatureGridProps {
 export default function FeatureGrid({ petType }: FeatureGridProps) {
   const router = useRouter();
   const isFarming = petType === 'Farming';
+  const isPoultryOrFish = ['Fish', 'Poultry'].includes(petType);
 
   const baseFeatures = [
     { name: 'Voice Chat', icon: <Mic className="h-8 w-8 mb-2" />, path: '/voice-chat', available: true },
@@ -26,7 +27,7 @@ export default function FeatureGrid({ petType }: FeatureGridProps) {
     { name: 'Care Reminders', icon: <CalendarClock className="h-8 w-8 mb-2" />, path: '/reminders', available: true },
     { name: 'Feed Advice', icon: <Wheat className="h-8 w-8 mb-2" />, path: '/feed-advice', available: true },
     { name: 'Vet Connect', icon: <Video className="h-8 w-8 mb-2" />, path: '/vet-connect', available: true },
-    { name: 'Fish/Poultry Monitor', icon: <Droplets className="h-8 w-8 mb-2" />, path: '/monitor', available: ['Fish', 'Poultry'].includes(petType) },
+    { name: 'Fish/Poultry Monitor', icon: <Droplets className="h-8 w-8 mb-2" />, path: '/monitor', available: isPoultryOrFish },
   ];
 
   const farmingFeatures = [
