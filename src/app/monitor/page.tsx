@@ -91,7 +91,7 @@ export default function MonitorPage() {
                 setPoultryData(prev => ({ ...prev, deaths: [...prev.deaths, { date: today, value: parseInt(deaths) }] }));
                 updated = true;
             }
-        } else {
+        } else if (focusType === 'Fish') {
             const fishMortality = formData.get('fishMortality') as string;
             const waterClarity = formData.get('waterClarity') as string;
             if (fishMortality) {
@@ -110,22 +110,31 @@ export default function MonitorPage() {
         setIsDialogOpen(false);
     }
     
-    if (isLoggedOut || !focusType || !['Poultry', 'Fish'].includes(focusType)) {
-        // Render a loading or fallback state until focusType is determined
+    if (isLoggedOut) {
+        return null; // Don't render anything if logging out
+    }
+    
+    if (!focusType) {
+        // Render a loading state or nothing while waiting for focusType
+        return <div className="flex min-h-screen w-full flex-col bg-background" />;
+    }
+    
+    if (!['Poultry', 'Fish'].includes(focusType)) {
         return (
             <div className="flex min-h-screen w-full flex-col">
                 <Header onLogout={handleLogout} />
-                <main className="flex-1 container mx-auto p-4 md:p-8">
-                     <Button variant="ghost" onClick={() => router.push('/')} className="mb-4">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Dashboard
-                    </Button>
-                    <Card>
+                <main className="flex-1 container mx-auto p-4 md:p-8 flex flex-col items-center justify-center text-center">
+                     <Card className="w-full max-w-md">
                         <CardHeader>
-                            <CardTitle>Monitor</CardTitle>
+                            <CardTitle>Feature Not Available</CardTitle>
+                            <CardDescription>The monitor is only available for Poultry and Fish farms.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <p>Loading or invalid focus type selected...</p>
+                            <p>Your current focus is set to <span className="font-semibold text-primary">{focusType}</span>.</p>
+                            <Button onClick={() => router.push('/')} className="mt-4">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Dashboard
+                            </Button>
                         </CardContent>
                     </Card>
                 </main>
@@ -241,3 +250,5 @@ export default function MonitorPage() {
         </div>
     )
 }
+
+    
